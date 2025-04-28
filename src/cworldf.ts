@@ -1,19 +1,20 @@
 import * as THREE from "three";
 import * as CANNON from "cannon";
-
 import { CObject } from "./cobjects";
 
 export class CWorldF {
   physics: CANNON.World;
+  accuracy: number;
   scene: THREE.Scene;
   camera: THREE.PerspectiveCamera;
   renderer: THREE.WebGLRenderer;
   ambientLight: THREE.AmbientLight;
   directionalLight: THREE.DirectionalLight;
   cobjects: CObject[];
-  constructor() {
+  constructor(accuracy: number = 10) {
     this.physics = new CANNON.World();
     this.physics.gravity = new CANNON.Vec3(0, -9.82, 0);
+    this.accuracy = accuracy;
 
     this.scene = new THREE.Scene();
     this.camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 100);
@@ -22,8 +23,8 @@ export class CWorldF {
     this.renderer.setClearColor(0xddeeff);
     this.renderer.shadowMap.enabled = true;
     document.body.appendChild(this.renderer.domElement);
-    this.camera.position.set(7, 5, 7);
-    this.camera.lookAt(0, 5, 0);
+    this.camera.position.set(2, 1, 2);
+    this.camera.lookAt(0, 1, 0);
 
     this.ambientLight = new THREE.AmbientLight(0xffffff);
     this.scene.add(this.ambientLight);
@@ -76,7 +77,7 @@ export class CWorldF {
   }
 
   updateAndRender(deltaTime: number) {
-    this.physics.step(deltaTime);
+    this.physics.step(1 / 60, deltaTime, this.accuracy);
     this.cobjects.forEach(cobject => {
       cobject.mesh.position.copy(cobject.body.position);
       cobject.mesh.quaternion.copy(cobject.body.quaternion);
