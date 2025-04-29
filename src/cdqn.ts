@@ -17,12 +17,14 @@ export class CDeepQLearingAgent {
   model: tf.LayersModel;
   memory: Experience[];
   trainingInProgress: boolean;
+  fit: number;
   constructor(model: tf.LayersModel, numActions: number, gamma: number = 0.95, epsilon: number = 0.1) {
     this.numActions = numActions;
     this.gamma = gamma;
     this.epsilon = epsilon;
     this.model = model;
     this.memory = [];
+    this.fit = 0;
     this.trainingInProgress = false;
   }
   selectAction(state: number[], epsilon: number = this.epsilon) {
@@ -46,7 +48,7 @@ export class CDeepQLearingAgent {
     if (this.memory.length > MaxMemorySize) this.memory.shift()
   }
   async replay(batchSize: number = 32) {
-    if (this.memory.length > batchSize || this.trainingInProgress) return;
+    if (this.memory.length < batchSize || this.trainingInProgress) return;
     this.trainingInProgress = true;
     try {
       const minibatch = Array.from({ length: batchSize }).map(_ => this.memory[Math.floor(Math.random() * this.memory.length)])
@@ -61,11 +63,15 @@ export class CDeepQLearingAgent {
       });
       const updatedQStatesValuesTensor = tf.tensor2d(qStatesValues);
       await this.model.fit(statesTensor, updatedQStatesValuesTensor, { epochs: 1, verbose: 0 });
+      this.fit++;
       statesTensor.dispose();
       nextStatesTensor.dispose();
       qStatesValuesTensor.dispose();
       qNextStatesValuesTensor.dispose();
       updatedQStatesValuesTensor.dispose();
+    }
+    catch {
+      console.error("error");
     }
     finally {
       this.trainingInProgress = false;

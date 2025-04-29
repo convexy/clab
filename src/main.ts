@@ -15,25 +15,25 @@ ccc.camera.lookAt(0, 5, 0);
 
 async function getModel() {
   // const model = tf.sequential();
-  // model.add(tf.layers.dense({ inputShape: [(3 + 3 + 4 + 3) + (3 + 3)], units: 6, activation: "relu" }));
-  // model.add(tf.layers.dense({ units: 6, activation: "relu" }));
-  // model.add(tf.layers.dense({ units: 25, activation: "softmax" }));
+  // model.add(tf.layers.dense({ inputShape: [(3 + 3 + 4 + 3) + (3 + 3)], units: 12, activation: "relu" }));
+  // model.add(tf.layers.dense({ units: 12, activation: "relu" }));
+  // model.add(tf.layers.dense({ units: 9, activation: "linear" }));
   const model = await tf.loadLayersModel('indexeddb://clab-model');
   return model;
 }
 const model = await getModel();
 model.compile({ optimizer: tf.train.adam(0.01), loss: "meanSquaredError" });
 
-const cdqnAgent = new CDeepQLearingAgent(model, 25);
+const cdqnAgent = new CDeepQLearingAgent(model, 9);
 
-let dx = -10;
-let dz = -10;
+const dx = -3;
+const dz = -3;
 
 function setRandomInitState(cobject: CObject, dx: number, dy: number, dz: number) {
-  // const rx = Math.random() * 0.4 - 0.2;
-  // const rz = Math.random() * 0.4 - 0.2;
-  const rx = - 0.2;
-  const rz = - 0.2;
+  const rx = Math.random() * 0.4 - 0.2;
+  const rz = Math.random() * 0.4 - 0.2;
+  // const rx = - 0.2;
+  // const rz = - 0.2;
   const r2 = rx ** 2 + rz ** 2;
   const ry = Math.sqrt(1 - r2);
   const alpha = Math.atan2(rx, rz);
@@ -59,10 +59,7 @@ function generateTrainee(i: number, j: number) {
   cworldf.addCObject(cstick);
   const lockConstraint = new CANNON.LockConstraint(csphere.body, cplate.body);
   cworldf.physics.addConstraint(lockConstraint);
-
   cstick.mesh.traverse((obj) => { if (obj instanceof THREE.Mesh) (obj.material as THREE.MeshPhongMaterial).color = new THREE.Color(0x00ff00); });
-  csphere.body.type = CANNON.Body.DYNAMIC;
-  cplate.body.type = CANNON.Body.DYNAMIC;
   const constraint = new CANNON.PointToPointConstraint(
     csphere.body,
     new CANNON.Vec3(0, 0, 0),
@@ -89,33 +86,33 @@ function generateTrainee(i: number, j: number) {
   let totalReward = 0;
   let timeSpent = 0;
   async function train1() {
-    action = cdqnAgent.selectAction(state);
-    let fx = (action % 5 - 2) * 5;
-    let fz = (Math.floor(action / 5) - 2) * 5;
+    action = cdqnAgent.selectAction(state, 0.2);
+    let fx = (action % 3 - 1) * 20;
+    let fz = (Math.floor(action / 3) - 1) * 20;
     csphere.body.applyForce(new CANNON.Vec3(fx, 0, fz), new CANNON.Vec3(0, 0, 0));
   }
   async function train2() {
     let nextState = getState();
     // console.log(cstick.body.position.y, cplate.body.velocity);
-    if (cstick.body.position.y > 1.2) {
+    if (cstick.body.position.y > 1) {
       timeSpent++;
-      // let reward = ((cstick.body.position.y - 1) / 0.65);
-      let reward = ((cstick.body.position.y - 1.6) / 0.05) + timeSpent * 0.01;
-      // let reward = ((cstick.body.position.y - 1) / 0.65) + (1 / (1 + (cplate.body.position.x - dx * i) ** 2 + (cplate.body.position.z - dz * j) ** 2) - 1 / 2) + timeSpent * 0.01;
+      let reward = ((cstick.body.position.y - 1.3) / (1.65 - 1.3))
+        + (1 / (1 + (cplate.body.position.x - dx * i) ** 2 + (cplate.body.position.z - dz * j) ** 2) - 1 / 2)
+        + timeSpent * 0.01;
       totalReward += reward;
       cdqnAgent.remember({ state: state, nextState: nextState, action: action, done: false, reward: reward });
       state = nextState;
     }
     else {
-      if (Math.random() < 0.001) {
+      if (Math.random() < 0.05) {
         await model.save("indexeddb://clab-model");
-        console.log("save!");
+        console.log("save! Fitted: " + cdqnAgent.fit);
       }
       let reward = -10;
-      totalReward += reward;
       cdqnAgent.remember({ state: state, nextState: nextState, action: action, done: true, reward: reward });
+      totalReward += reward;
+      console.log("total reward:" + Math.floor(totalReward));
       timeSpent = 0;
-      if (Math.random() < 0.001) console.log("total reward:" + Math.floor(totalReward));
       totalReward = 0;
       setRandomInitState(cstick, dx * i, 0.65, dz * j);
       cstick.body.velocity.set(0, 0, 0);
@@ -133,9 +130,6 @@ function generateTrainee(i: number, j: number) {
     }
   }
 
-  async function replay() {
-    await cdqnAgent.replay();
-  }
 
   function rule() {
     csphere.body.position.y = 0.6;
@@ -152,12 +146,21 @@ function generateTrainee(i: number, j: number) {
   cworldf.beforeStep.push(train1);
   cworldf.afterStep.push(train2);
   cworldf.afterStep.push(rule);
-  cworldf.afterStep.push(replay);
+  // cworldf.afterStep.push(replay);
 
 }
+async function replay() {
+  await cdqnAgent.replay();
+  return cdqnAgent;
+}
+setTimeout(() => {
+  setInterval(() => {
+    replay();
+  }, 10);
+}, 1000);
 
-for (let i = 0; i < 2; i++) {
-  for (let j = 0; j < 2; j++) {
+for (let i = 0; i < 1; i++) {
+  for (let j = 0; j < 1; j++) {
     generateTrainee(i, j);
   }
 }
