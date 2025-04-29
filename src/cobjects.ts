@@ -42,7 +42,7 @@ export class CCube extends CObject {
         ? { x: options?.size ?? 1, y: options?.size ?? 1, z: options?.size ?? 1 }
         : { x: options?.size?.x ?? 1, y: options?.size?.y ?? 1, z: options?.size?.z ?? 1 };
     const body = new CANNON.Body({
-      mass: 1,
+      mass: options?.mass ?? 1,
       shape: new CANNON.Box(new CANNON.Vec3(size.x / 2, size.y / 2, size.z / 2)),
       position: new CANNON.Vec3(options?.position?.x ?? 0, options?.position?.y ?? 0, options?.position?.z ?? 0),
       velocity: new CANNON.Vec3(options?.velocity?.x ?? 0, options?.velocity?.y ?? 0, options?.velocity?.z ?? 0),

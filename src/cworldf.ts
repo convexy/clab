@@ -11,6 +11,8 @@ export class CWorldF {
   ambientLight: THREE.AmbientLight;
   directionalLight: THREE.DirectionalLight;
   cobjects: CObject[];
+  beforeStep: (() => void)[];
+  afterStep: (() => void)[];
   constructor(accuracy: number = 10) {
     this.physics = new CANNON.World();
     this.physics.gravity = new CANNON.Vec3(0, -9.82, 0);
@@ -46,6 +48,10 @@ export class CWorldF {
 
     this.addHelper();
     this.addGround();
+
+    this.beforeStep = [];
+    this.afterStep = [];
+
   }
   addHelper() {
     const axesHelper = new THREE.AxesHelper(5);
@@ -77,7 +83,9 @@ export class CWorldF {
   }
 
   updateAndRender(deltaTime: number) {
+    this.beforeStep.forEach(func => { func() });
     this.physics.step(1 / 60, deltaTime, this.accuracy);
+    this.afterStep.forEach(func => { func() });
     this.cobjects.forEach(cobject => {
       cobject.mesh.position.copy(cobject.body.position);
       cobject.mesh.quaternion.copy(cobject.body.quaternion);
