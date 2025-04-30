@@ -17,10 +17,11 @@ ccc.camera.position.set(7, 5, 7);
 ccc.camera.lookAt(0, 5, 0);
 
 const cCartPole3d = new CCartPole3d(cworldf);
-cCartPole3d.generateTrainee({ position: { x: 0, z: 0 } });
-cCartPole3d.generateTrainee({ position: { x: 0, z: -10 } });
-cCartPole3d.generateTrainee({ position: { x: -10, z: 0 } });
-cCartPole3d.generateTrainee({ position: { x: -10, z: -10 } });
+for (let i = 0; i < 4; i++) {
+  for (let j = 0; j < 4; j++) {
+    cCartPole3d.generateTrainee({ position: { x: -10 * i, z: -10 * j } });
+  }
+}
 
 // const cBoundKit = new CBoundKit(cworldf, { position: { x: -10, z: 0 } });
 

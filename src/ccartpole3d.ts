@@ -49,6 +49,7 @@ export class CCartPole3d {
     }
     setTimeout(() => {
       replay();
+      self.model.save('downloads://ccp-model');
     }, 1000);
 
     setInterval(() => {
