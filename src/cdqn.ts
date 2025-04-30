@@ -1,6 +1,6 @@
 import * as tf from "@tensorflow/tfjs";
 
-const MaxMemorySize = 1000;
+const MaxMemorySize = 10000;
 
 export type Experience = {
   state: number[];
@@ -61,7 +61,7 @@ export class CDeepQLearingAgent {
       const qNextStatesValuesTensor = this.model.predict(nextStatesTensor) as tf.Tensor;
       const qNextStatesValues = await qNextStatesValuesTensor.array() as number[][];
       minibatch.forEach((experience, i) => {
-        qStatesValues[i][experience.action] = experience.done ? experience.reward : experience.reward + this.gamma * Math.max(...qNextStatesValues[i]);
+        qStatesValues[i][experience.action] = experience.done ? experience.reward : (experience.reward + this.gamma * Math.max(...qNextStatesValues[i]));
       });
       const updatedQStatesValuesTensor = tf.tensor2d(qStatesValues);
       await this.model.fit(statesTensor, updatedQStatesValuesTensor, { epochs: 1, verbose: 0 });

@@ -16,6 +16,7 @@ type Trainee = {
   timeSpent: number,
 };
 
+const loadmodel = await tf.loadLayersModel("indexeddb://ccp-model");
 export class CCartPole3d {
   cworldf: CWorldF;
   actions: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -24,15 +25,15 @@ export class CCartPole3d {
   trainees: Trainee[];
   constructor(cworldf: CWorldF) {
     this.cworldf = cworldf;
-    const model = tf.sequential();
-    model.add(tf.layers.dense({ inputShape: [(3 + 3 + 4 + 3) + (3 + 3)], units: 12, activation: "relu" }));
-    model.add(tf.layers.dense({ units: 12, activation: "relu" }));
-    model.add(tf.layers.dense({ units: 9, activation: "linear" }));
-    this.model = model;
-    // this.model = await tf.loadLayersModel("indexeddb://clab-model");
+    // const model = tf.sequential();
+    // model.add(tf.layers.dense({ inputShape: [(3 + 3 + 4 + 3) + (3 + 3)], units: 12, activation: "relu" }));
+    // model.add(tf.layers.dense({ units: 12, activation: "relu" }));
+    // model.add(tf.layers.dense({ units: 9, activation: "linear" }));
+    // this.model = model;
+    this.model = loadmodel;
     this.model.compile({ optimizer: tf.train.adam(0.01), loss: "meanSquaredError" });
 
-    this.agent = new CDeepQLearingAgent(model, this.actions.length);
+    this.agent = new CDeepQLearingAgent(this.model, this.actions.length);
     this.trainees = [];
 
     const self = this;
@@ -40,11 +41,20 @@ export class CCartPole3d {
     this.cworldf.afterStep.push(() => { self.train2() });
     this.cworldf.afterStep.push(() => { self.rule() });
 
-    setTimeout(() => {
-      setInterval(() => {
-        self.agent.replay();
+    function replay() {
+      Array.from({ length: 300 }).forEach(async _ => await self.agent.replay());
+      setTimeout(() => {
+        replay();
       }, 10);
+    }
+    setTimeout(() => {
+      replay();
     }, 1000);
+
+    setInterval(() => {
+      self.model.save("indexeddb://ccp-model").then(_ => console.log("save!"));
+      console.log(self.agent.fit);
+    }, 5000);
 
   }
   generateTrainee(options?: { position: { x: number, z: number } }) {
@@ -105,7 +115,7 @@ export class CCartPole3d {
         trainee.experience.reward = 0;
         trainee.experience.reward += ((trainee.cstick.body.position.y - 1.3) / (1.65 - 1.3));
         trainee.experience.reward += (1 / (1 + (trainee.cplate.body.position.x - trainee.position.x) ** 2 + (trainee.cplate.body.position.z - trainee.position.z) ** 2) - 1 / 2);
-        trainee.experience.reward += trainee.timeSpent * 0.01;
+        // trainee.experience.reward += trainee.timeSpent * 0.01;
         trainee.experience.done = false;
         trainee.totalReward += trainee.experience.reward;
       }
