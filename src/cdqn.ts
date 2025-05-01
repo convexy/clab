@@ -11,6 +11,16 @@ export type Experience = {
 };
 
 
+export abstract class Environment {
+  static numActions: number;
+  abstract getState(): number[];
+  abstract receiveAction(action: number): void;
+  abstract calculateReward(): number;
+  abstract get isDone(): boolean;
+  totalReward: number;
+  abstract setInitState(): void;
+}
+
 
 export class CDeepQLearingAgent {
   numActions: number;
