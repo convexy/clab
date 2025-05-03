@@ -39,6 +39,17 @@ function animate() {
 }
 cworldf.setAnimationLoop(animate);
 
+// function step() {
+//   cworldf.beforeStep.forEach(func => { func() });
+//   cworldf.physics.step(1 / 60, 1 / 60, cworldf.accuracy);
+//   cworldf.afterStep.forEach(func => { func() });
+//   setTimeout(step, 10);
+// }
+// setTimeout(() => {
+//   step();
+// }, 3000);
+
+
 
 
 // setTimeout(async () => {

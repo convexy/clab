@@ -16,7 +16,7 @@ type Trainee = {
   timeSpent: number,
 };
 
-const loadmodel = await tf.loadLayersModel("indexeddb://ccp-model");
+// const loadmodel = await tf.loadLayersModel("indexeddb://ccp-model");
 export class CCartPole3d {
   cworldf: CWorldF;
   actions: number[] = [0, 1, 2, 3, 4, 5, 6, 7, 8];
@@ -25,12 +25,12 @@ export class CCartPole3d {
   trainees: Trainee[];
   constructor(cworldf: CWorldF) {
     this.cworldf = cworldf;
-    // const model = tf.sequential();
-    // model.add(tf.layers.dense({ inputShape: [(3 + 3 + 4 + 3) + (3 + 3)], units: 12, activation: "relu" }));
-    // model.add(tf.layers.dense({ units: 12, activation: "relu" }));
-    // model.add(tf.layers.dense({ units: 9, activation: "linear" }));
-    // this.model = model;
-    this.model = loadmodel;
+    const model = tf.sequential();
+    model.add(tf.layers.dense({ inputShape: [(3 + 3)], units: 12, activation: "relu" }));
+    model.add(tf.layers.dense({ units: 12, activation: "relu" }));
+    model.add(tf.layers.dense({ units: 9, activation: "linear" }));
+    this.model = model;
+    // this.model = loadmodel;
     this.model.compile({ optimizer: tf.train.adam(0.01), loss: "meanSquaredError" });
 
     this.agent = new CDeepQLearingAgent(this.model, this.actions.length);
@@ -42,20 +42,28 @@ export class CCartPole3d {
     this.cworldf.afterStep.push(() => { self.rule() });
 
     function replay() {
-      Array.from({ length: 300 }).forEach(async _ => await self.agent.replay());
+      self.agent.replay()
+        .then(_ => self.agent.replay()
+          .then(_ => self.agent.replay()
+            .then(_ => self.agent.replay()
+              .then(_ => self.agent.replay()
+                .then(_ => self.agent.replay()
+                  .then(_ => self.agent.replay()
+                    .then(_ => self.agent.replay())))))));
+      console.log(self.agent.fit);
       setTimeout(() => {
         replay();
-      }, 10);
+      }, 2000);
     }
     setTimeout(() => {
       replay();
-      self.model.save('downloads://ccp-model');
+      // self.model.save('downloads://ccp-model');
     }, 1000);
 
-    setInterval(() => {
-      self.model.save("indexeddb://ccp-model").then(_ => console.log("save!"));
-      console.log(self.agent.fit);
-    }, 5000);
+    // setInterval(() => {
+    //   self.model.save("indexeddb://ccp-model").then(_ => console.log("save!"));
+    //   console.log(self.agent.fit);
+    // }, 5000);
 
   }
   generateTrainee(options?: { position: { x: number, z: number } }) {
@@ -103,8 +111,8 @@ export class CCartPole3d {
     this.trainees.forEach(trainee => {
       trainee.experience.state = CCartPole3d.getState(trainee);
       trainee.experience.action = this.agent.selectAction(trainee.experience.state, 0.2);
-      let fx = (trainee.experience.action % 3 - 1) * 20;
-      let fz = (Math.floor(trainee.experience.action / 3) - 1) * 20;
+      let fx = (trainee.experience.action % 3 - 1) * 10;
+      let fz = (Math.floor(trainee.experience.action / 3) - 1) * 10;
       trainee.csphere.body.applyForce(new CANNON.Vec3(fx, 0, fz), new CANNON.Vec3(0, 0, 0));
     });
   }
@@ -115,8 +123,8 @@ export class CCartPole3d {
         trainee.timeSpent++;
         trainee.experience.reward = 0;
         trainee.experience.reward += ((trainee.cstick.body.position.y - 1.3) / (1.65 - 1.3));
-        trainee.experience.reward += (1 / (1 + (trainee.cplate.body.position.x - trainee.position.x) ** 2 + (trainee.cplate.body.position.z - trainee.position.z) ** 2) - 1 / 2);
-        // trainee.experience.reward += trainee.timeSpent * 0.01;
+        // trainee.experience.reward += (1 / (1 + (trainee.cplate.body.position.x - trainee.position.x) ** 2 + (trainee.cplate.body.position.z - trainee.position.z) ** 2) - 1 / 2);
+        trainee.experience.reward += trainee.timeSpent * 0.01;
         trainee.experience.done = false;
         trainee.totalReward += trainee.experience.reward;
       }
@@ -147,8 +155,13 @@ export class CCartPole3d {
     });
   }
   static getState(trainee: Trainee) {
-    return [...trainee.cstick.body.position.vsub(new CANNON.Vec3(trainee.position.x, 0, trainee.position.z)).toArray()].concat([...trainee.cstick.body.velocity.toArray()]).concat([...trainee.cstick.body.quaternion.toArray()]).concat([...trainee.cstick.body.angularVelocity.toArray()])
-      .concat([...trainee.cplate.body.position.vsub(new CANNON.Vec3(trainee.position.x, 0, trainee.position.z)).toArray()]).concat([...trainee.cplate.body.velocity.toArray()]);
+    return [...
+      trainee.cstick.body.position.vsub(trainee.cplate.body.position).toArray()]
+      .concat([...trainee.cstick.body.velocity.vsub(trainee.cplate.body.velocity).toArray()])
+      // .concat([...trainee.cstick.body.quaternion.toArray()]).concat([...trainee.cstick.body.angularVelocity.toArray()])
+      // .concat([...trainee.cplate.body.position.vsub(new CANNON.Vec3(trainee.position.x, 0, trainee.position.z)).toArray()])
+      // .concat([...trainee.cplate.body.velocity.toArray()])
+      ;
   }
   static setRandomInitState(trainee: Trainee) {
     trainee.timeSpent = 0;
