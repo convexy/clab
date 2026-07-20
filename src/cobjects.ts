@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as CANNON from "cannon";
+import * as CANNON from "cannon-es";
 
 interface CObjectOptions {
   mass?: number,
@@ -49,6 +49,22 @@ export class CCube extends CObject {
     });
     const geometry = new THREE.BoxGeometry(size.x, size.y, size.z);
     const material = new THREE.MeshPhongMaterial({ color: 0x00ffff });
+    const mesh = new THREE.Mesh(geometry, material);
+    super(body, mesh);
+  }
+}
+
+
+export class CCylinder extends CObject {
+  constructor(options?: { mass?: number, h?: number, r?: number }) {
+    const height = options?.h ?? 1;
+    const radius = options?.r ?? 1;
+    const body = new CANNON.Body({
+      mass: options?.mass ?? 1,
+      shape: new CANNON.Cylinder(radius, radius, height, 8),
+    });
+    const geometry = new THREE.CylinderGeometry(radius, radius, height, 8);
+    const material = new THREE.MeshPhongMaterial({ color: 0x00ff00 });
     const mesh = new THREE.Mesh(geometry, material);
     super(body, mesh);
   }

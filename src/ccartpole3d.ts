@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as CANNON from "cannon";
+import * as CANNON from "cannon-es";
 import * as tf from "@tensorflow/tfjs";
 
 import { Experience, CDeepQLearingAgent } from "./cdqn";

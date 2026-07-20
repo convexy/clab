@@ -10,8 +10,7 @@
   "license": "ISC",
   "dependencies": {
     "@tensorflow/tfjs": "^4.22.0",
-    "@types/cannon": "^0.1.13",
-    "cannon": "^0.6.2",
+    "cannon-es": "^0.20.0",
     "stats.js": "^0.17.0",
     "three": "^0.176.0"
   },

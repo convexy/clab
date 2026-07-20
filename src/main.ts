@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as CANNON from "cannon";
+import * as CANNON from "cannon-es";
 import Stats from "stats.js";
 import * as tf from "@tensorflow/tfjs";
 
@@ -8,6 +8,7 @@ import { CCameraController } from "./ccameracontroller";
 import { CBall, CCube, CObject } from "./cobjects";
 import { Experience, CDeepQLearingAgent } from "./cdqn";
 import { CBoundKit } from "./cbound"
+import { CCartPole2d } from "./ccartpole2d";
 import { CCartPole3d } from "./ccartpole3d";
 import { RCAction, CVirtualRubiksCube } from "./cvirtualrubikscube";
 
@@ -16,15 +17,29 @@ const ccc = new CCameraController(cworldf.camera);
 ccc.camera.position.set(7, 5, 7);
 ccc.camera.lookAt(0, 5, 0);
 
-const cCartPole3d = new CCartPole3d(cworldf);
+const cCartPole2d = new CCartPole2d(cworldf);
 for (let i = 0; i < 4; i++) {
   for (let j = 0; j < 4; j++) {
-    cCartPole3d.generateTrainee({ position: { x: -10 * i, z: -10 * j } });
+    cCartPole2d.generateTrainee(-(4 * i + j));
   }
 }
 
-// const cBoundKit = new CBoundKit(cworldf, { position: { x: -10, z: 0 } });
 
+// const cCartPole3d = new CCartPole3d(cworldf);
+// for (let i = 0; i < 4; i++) {
+//   for (let j = 0; j < 4; j++) {
+//     cCartPole3d.generateTrainee({ position: { x: -10 * i, z: -10 * j } });
+//   }
+// }
+
+const cBoundKit = new CBoundKit(cworldf, { position: { x: -10, z: 0 } });
+
+import { Sky } from "three/examples/jsm/objects/Sky.js";
+const sky = new Sky();
+sky.scale.setScalar(100);
+sky.material.uniforms.sunPosition.value = new THREE.Vector3().setFromSphericalCoords(1, THREE.MathUtils.degToRad(60), THREE.MathUtils.degToRad(0));
+cworldf.scene.add(sky);
+cworldf.afterStep.push(() => { sky.position.copy(cworldf.camera.position); });
 
 const stats = new Stats();
 stats.showPanel(0);

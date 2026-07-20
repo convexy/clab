@@ -1,5 +1,5 @@
 import * as THREE from "three";
-import * as CANNON from "cannon";
+import * as CANNON from "cannon-es";
 
 import { CBall, CCube, CObject } from "./cobjects";
 import { CWorldF } from "./cworldf";
@@ -33,7 +33,7 @@ export class CBoundKit {
     }, 100);
     const contactMaterial = new CANNON.ContactMaterial(
       this.cball.body.material,
-      this.cracket.body.material,
+      this.cracket.body.material as CANNON.Material,
       {
         restitution: 0.9,
       }
